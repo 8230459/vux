@@ -28,7 +28,7 @@
 <script>
   import XUploadItem from './x-upload-item.vue'
   import axios from 'axios'
-  import {Previewer} from 'vuxs'
+  import {Previewer} from 'vux'
 
   export default {
     props: {

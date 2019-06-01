@@ -38,8 +38,8 @@
         <div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap">
           <div class="pswp__share-tooltip"></div>
         </div>
-        <button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)"></button>
-        <button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)"></button>
+        <button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)" :style="{visibility: showButton?'visible':'hidden'}"></button>
+        <button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)" :style="{visibility: showButton?'visible':'hidden'}"></button>
         <div class="pswp__caption">
           <div class="pswp__caption__center"></div>
         </div>
@@ -49,132 +49,137 @@
 </template>
 
 <script>
-import PhotoSwipe from 'x-photoswipe/dist/photoswipe'
-import UI from 'x-photoswipe/dist/photoswipe-ui-default'
-import objectAssign from 'object-assign'
+  import PhotoSwipe from 'x-photoswipe/dist/photoswipe'
+  import UI from 'x-photoswipe/dist/photoswipe-ui-default'
+  import objectAssign from 'object-assign'
 
-export default {
-  name: 'previewer',
-  computed: {
-    imgs () {
-      return this.list.map(one => {
-        if (!one.msrc) {
-          one.msrc = one.src
-        }
-        if (typeof one.w === 'undefined') {
-          one.w = 0;
-          one.h = 0
-        }
-        return one
-      })
-    }
-  },
-  watch: {
-    imgs (newVal, oldVal) {
-      if (!this.photoswipe) {
-        return
-      }
-      if (newVal.length && newVal.length - oldVal.length === -1) {
-        const index = this.photoswipe.getCurrentIndex();
-        this.photoswipe.invalidateCurrItems();
-        this.photoswipe.items.splice(index, 1);
-        let goToIndex = index;
-        if (goToIndex > this.photoswipe.items.length - 1) {
-          goToIndex = 0
-        }
-        this.photoswipe.goTo(goToIndex);
-        this.photoswipe.updateSize(true);
-        this.photoswipe.ui.update()
-      } else if (!newVal.length) {
-        this.close()
-      }
-    }
-  },
-  methods: {
-    init (index) {
-      const self = this;
-      const showItem = this.imgs[index];
-      if (!showItem.w || !showItem.h || showItem.w < 5 || showItem.h < 5) {
-        const img = new Image();
-        img.onload = function () {
-          showItem.w = this.width;
-          showItem.h = this.height;
-          self.doInit(index)
-        };
-        img.src = showItem.src
-      } else {
-        this.doInit(index)
+  export default {
+    name: 'previewer',
+    computed: {
+      imgs() {
+        return this.list.map(one => {
+          if (!one.msrc) {
+            one.msrc = one.src
+          }
+          if (typeof one.w === 'undefined') {
+            one.w = 0;
+            one.h = 0
+          }
+          return one
+        })
       }
     },
-    doInit (index) {
-      const self = this;
-      let options = objectAssign({
-        history: false,
-        shareEl: false,
-        tapToClose: true,
-        index: index
-      }, this.options);
-      this.photoswipe = new PhotoSwipe(this.$el, UI, this.imgs, options);
-
-      this.photoswipe.listen('gettingData', function (index, item) {
-        if (!item.w || !item.h || item.w < 1 || item.h < 1) {
+    watch: {
+      imgs(newVal, oldVal) {
+        if (!this.photoswipe) {
+          return
+        }
+        if (newVal.length && newVal.length - oldVal.length === -1) {
+          const index = this.photoswipe.getCurrentIndex();
+          this.photoswipe.invalidateCurrItems();
+          this.photoswipe.items.splice(index, 1);
+          let goToIndex = index;
+          if (goToIndex > this.photoswipe.items.length - 1) {
+            goToIndex = 0
+          }
+          this.photoswipe.goTo(goToIndex);
+          this.photoswipe.updateSize(true);
+          this.photoswipe.ui.update()
+        } else if (!newVal.length) {
+          this.close()
+        }
+      }
+    },
+    methods: {
+      init(index) {
+        const self = this;
+        const showItem = this.imgs[index];
+        if (!showItem.w || !showItem.h || showItem.w < 5 || showItem.h < 5) {
           const img = new Image();
           img.onload = function () {
-            item.w = this.width;
-            item.h = this.height;
-            self.photoswipe.updateSize(true)
+            showItem.w = this.width;
+            showItem.h = this.height;
+            self.doInit(index)
           };
-          img.src = item.src
+          img.src = showItem.src
+        } else {
+          this.doInit(index)
         }
-      });
+      },
+      doInit(index) {
+        const self = this;
+        let options = objectAssign({
+          history: false,
+          shareEl: false,
+          tapToClose: true,
+          index: index
+        }, this.options);
+        this.photoswipe = new PhotoSwipe(this.$el, UI, this.imgs, options);
 
-      this.photoswipe.init();
-      this.photoswipe.listen('close', () => {
-        this.$emit('on-close')
-      });
-      this.photoswipe.listen('afterChange', (a, b) => {
-        this.$emit('on-index-change', {
-          currentIndex: this.photoswipe.getCurrentIndex()
+        this.photoswipe.listen('gettingData', function (index, item) {
+          if (!item.w || !item.h || item.w < 1 || item.h < 1) {
+            const img = new Image();
+            img.onload = function () {
+              item.w = this.width;
+              item.h = this.height;
+              self.photoswipe.updateSize(true)
+            };
+            img.src = item.src
+          }
+        });
+
+        this.photoswipe.init();
+        this.photoswipe.listen('close', () => {
+          this.$emit('on-close')
+        });
+        this.photoswipe.listen('afterChange', (a, b) => {
+          this.$emit('on-index-change', {
+            currentIndex: this.photoswipe.getCurrentIndex()
+          })
         })
-      })
+      },
+      show(index) {
+        this.init(index)
+      },
+      getCurrentIndex() {
+        return this.photoswipe.getCurrentIndex()
+      },
+      close() {
+        this.photoswipe.close()
+      },
+      goTo(index) {
+        this.photoswipe.goTo(index)
+      },
+      prev() {
+        this.photoswipe.prev()
+      },
+      next() {
+        this.photoswipe.next()
+      }
     },
-    show (index) {
-      this.init(index)
-    },
-    getCurrentIndex () {
-      return this.photoswipe.getCurrentIndex()
-    },
-    close () {
-      this.photoswipe.close()
-    },
-    goTo (index) {
-      this.photoswipe.goTo(index)
-    },
-    prev () {
-      this.photoswipe.prev()
-    },
-    next () {
-      this.photoswipe.next()
-    }
-  },
-  props: {
-    list: {
-      type: Array,
-      required: true
-    },
-    index: {
-      type: Number,
-      default: 0
-    },
-    options: {
-      type: Object,
-      default () {
-        return {}
+    props: {
+      list: {
+        type: Array,
+        required: true
+      },
+      index: {
+        type: Number,
+        default: 0
+      },
+      options: {
+        type: Object,
+        default() {
+          return {}
+        }
+      },
+      showButton: {
+        type: Boolean,
+        default: false
       }
     }
   }
-}
 </script>
 
 <style src="x-photoswipe/dist/photoswipe.css"></style>
 <style src="x-photoswipe/dist/default-skin/default-skin.css"></style>
+
